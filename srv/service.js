@@ -197,6 +197,62 @@ module.exports = class PharmaGuardService extends cds.ApplicationService {
       return JSON.stringify(verifyChain(rows));
     });
 
+    // ---------- 7. Gemini AI chat proxy ----------
+    this.on('geminiChat', async req => {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return JSON.stringify({ text: 'Gemini API key not configured. Set GEMINI_API_KEY environment variable.', source: 'fallback' });
+
+      let messages, context;
+      try { messages = JSON.parse(req.data.messages || '[]'); } catch { messages = []; }
+      try { context = JSON.parse(req.data.context || '{}'); } catch { context = {}; }
+
+      // Build system instruction from excursion context
+      const systemInstruction = `You are PharmaGuard Assistant, an AI decision-support agent built into the PharmaGuard cold chain monitoring platform.
+You help QA Managers make informed decisions about temperature excursions in pharmaceutical shipments.
+Be concise, professional, and always ground your answers in the data provided.
+Never identify yourself as Gemini, Google, or any other AI product — you are PharmaGuard Assistant.
+If stability data, SOP clauses, or incident details are available in the context, reference them specifically.
+Current excursion context: ${JSON.stringify(context)}`;
+
+      const geminiMessages = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+
+      const body = {
+        system_instruction: { parts: [{ text: systemInstruction }] },
+        contents: geminiMessages,
+        generationConfig: { maxOutputTokens: 512, temperature: 0.3 }
+      };
+
+      try {
+        const https = require('https');
+        const model = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const text = await new Promise((resolve, reject) => {
+          const data = JSON.stringify(body);
+          const opts = { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } };
+          const r = require('https').request(url, opts, res => {
+            let buf = '';
+            res.on('data', d => buf += d);
+            res.on('end', () => {
+              try {
+                const j = JSON.parse(buf);
+                if (j.error) return reject(new Error(j.error.message));
+                resolve(j.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.');
+              } catch (e) { reject(e); }
+            });
+          });
+          r.on('error', reject);
+          r.write(data); r.end();
+        });
+        return JSON.stringify({ text, source: 'gemini' });
+      } catch (e) {
+        console.warn('[gemini] error:', e.message);
+        return JSON.stringify({ text: `AI error: ${e.message}`, source: 'error' });
+      }
+    });
+
     return super.init();
   }
 };

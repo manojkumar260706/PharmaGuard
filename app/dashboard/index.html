@@ -3,411 +3,1273 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PharmaGuard</title>
+<title>PharmaGuard — Cold Chain Monitor</title>
 <style>
-  :root {
-    --pine: #0f3d2e; --emerald: #1f8a5b; --mint: #e6f2ea; --paper: #f6faf7; --card: #ffffff;
-    --ink: #17261f; --muted: #5b7066; --line: #cfe0d6;
-    --amber: #8a5a00; --amber-bg: #fff3d1; --red: #b42318; --red-bg: #fde8e6; --blue: #0a6ed1;
-    --font: "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--paper); line-height: 1.45; }
-  button { font: inherit; cursor: pointer; }
-  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-  header { background: var(--pine); color: #fff; padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
-  .brand { font-size: 22px; font-weight: 700; letter-spacing: .2px; }
-  .brand small { display: block; font-size: 13px; font-weight: 400; color: #b9d8c8; }
-  .scenarios { display: flex; flex-wrap: wrap; gap: 8px; }
-  .scenarios button { background: transparent; color: #e6f2ea; border: 1px solid #4f7a67; border-radius: 6px; padding: 7px 12px; }
-  .scenarios button[aria-pressed="true"] { background: #fff; color: var(--pine); border-color: #fff; font-weight: 600; }
-  main { max-width: 1320px; margin: 0 auto; padding: 20px 24px 48px; display: grid; gap: 20px; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
-  @media (max-width: 1020px) { main { grid-template-columns: 1fr; } }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
-  h2 { margin: 0 0 12px; font-size: 17px; }
-  h3 { margin: 18px 0 8px; font-size: 15px; }
-  .full { grid-column: 1 / -1; }
-  .muted { color: var(--muted); }
-  .hidden { display: none !important; }
+/* ── Design Tokens (original light theme) ─────────────────────────── */
+:root {
+  --pine:      #0f3d2e;
+  --emerald:   #1f8a5b;
+  --emerald2:  #177a4e;
+  --mint:      #e6f2ea;
+  --mint2:     #d0e8d8;
+  --paper:     #f6faf7;
+  --card:      #ffffff;
+  --ink:       #17261f;
+  --muted:     #5b7066;
+  --line:      #cfe0d6;
+  --line2:     #b8d4c4;
+  --amber:     #8a5a00;
+  --amber-bg:  #fff3d1;
+  --amber-bd:  #f0d080;
+  --red:       #b42318;
+  --red-bg:    #fde8e6;
+  --red-bd:    #f0a8a0;
+  --blue:      #0a6ed1;
+  --font:      "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 2px 12px rgba(15,61,46,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--paper); color: var(--ink); line-height: 1.5; font-size: 14px; }
+button { font: inherit; cursor: pointer; border: none; }
+input, textarea { font: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+a { color: var(--emerald); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.hidden { display: none !important; }
 
-  /* status banner */
-  .banner { border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-weight: 600; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .banner span.sub { font-weight: 400; }
-  .banner.NORMAL { background: var(--mint); color: var(--pine); }
-  .banner.WATCH, .banner.WARNING { background: var(--amber-bg); color: var(--amber); }
-  .banner.EXCURSION { background: var(--red-bg); color: var(--red); }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
-  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
-  .stat b { display: block; font-size: 20px; }
-  .stat span { font-size: 12px; color: var(--muted); }
-  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-  canvas { width: 100%; height: 300px; display: block; }
-  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; align-items: center; }
-  .btn { border: 1px solid var(--emerald); background: #fff; color: var(--emerald); border-radius: 6px; padding: 8px 14px; font-weight: 600; }
-  .btn.primary { background: var(--emerald); color: #fff; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
-  .progress { flex: 1; min-width: 120px; height: 6px; background: var(--mint); border-radius: 3px; overflow: hidden; }
-  .progress i { display: block; height: 100%; width: 0; background: var(--emerald); }
-  #log { list-style: none; margin: 0; padding: 0; max-height: 190px; overflow: auto; border-top: 1px solid var(--line); }
-  #log li { padding: 6px 2px; border-bottom: 1px solid var(--mint); font-size: 14px; display: flex; gap: 10px; }
-  #log time { color: var(--muted); min-width: 44px; font-variant-numeric: tabular-nums; }
-  #log li.ignore { color: var(--muted); }
-  #log li.warn { color: var(--amber); }
-  #log li.alarm { color: var(--red); font-weight: 600; }
+/* ── Layout ─────────────────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; min-height: 100%; }
 
-  /* brief */
-  .meter { position: relative; height: 14px; border-radius: 7px; background: var(--mint); margin: 10px 0 4px; overflow: hidden; }
-  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--emerald); }
-  .meter i.mid { background: #d49a00; }
-  .meter i.high { background: var(--red); }
-  .meter u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); opacity: .35; }
-  .rec { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--pine); color: #fff; font-weight: 600; font-size: 13px; }
-  .options { display: grid; gap: 8px; }
-  .opt { text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 8px; padding: 10px 12px; }
-  .opt[aria-pressed="true"] { border-color: var(--emerald); background: var(--mint); }
-  .opt b { display: block; }
-  .opt small { color: var(--muted); }
-  details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
-  summary { cursor: pointer; font-weight: 600; }
-  label { display: block; font-size: 14px; margin: 10px 0 4px; font-weight: 600; }
-  input[type=text], input[type=number], textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-  input[type=range] { width: 100%; }
-  .compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; text-align: center; margin: 10px 0; }
-  .compare div { border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
-  .compare div.changed { border-color: var(--red); background: var(--red-bg); }
-  .compare b { font-size: 22px; display: block; }
-  .tag { font-size: 12px; color: var(--muted); }
-  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
-  dt { color: var(--muted); }
-  dd { margin: 0; }
-  .alertbox { background: var(--pine); color: #fff; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--mint); }
-  td.hash { font-family: Consolas, monospace; color: var(--muted); }
-  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--red); color: #fff; padding: 10px 16px; border-radius: 8px; max-width: 90vw; }
-  @media (prefers-reduced-motion: no-preference) { .meter i { transition: width .5s; } }
+/* ── Topbar ──────────────────────────────────────────────────────────── */
+#topbar {
+  background: var(--pine); color: #fff;
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; gap: 16px;
+  flex-shrink: 0; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.brand { font-size: 18px; font-weight: 700; letter-spacing: .2px; line-height: 1.2; }
+.brand small { display: block; font-size: 11px; font-weight: 400; color: #b9d8c8; letter-spacing: .4px; }
+.topbar-spacer { flex: 1; }
+.nav-pills { display: flex; gap: 4px; }
+.nav-pill {
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; color: #b9d8c8;
+  background: transparent; border: 1px solid transparent;
+  transition: all .15s;
+}
+.nav-pill:hover { background: rgba(255,255,255,.12); color: #fff; }
+.nav-pill.active { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.25); }
+
+/* ── Pages ───────────────────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Page: Shipments List ──────────────────────────────────────────── */
+#page-list { padding: 32px 28px 48px; max-width: 1200px; margin: 0 auto; width: 100%; }
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 22px; font-weight: 700; color: var(--pine); }
+.page-header p { color: var(--muted); margin-top: 4px; font-size: 14px; }
+
+.shipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.shipment-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 20px 20px 20px 24px;
+  cursor: pointer; transition: all .18s;
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.shipment-card::before {
+  content: ''; position: absolute; inset: 0 auto 0 0; width: 4px;
+  background: var(--line2); border-radius: var(--radius) 0 0 var(--radius);
+  transition: background .18s;
+}
+.shipment-card:hover { border-color: var(--emerald); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(15,61,46,.13); }
+.shipment-card:hover::before { background: var(--emerald); }
+.shipment-card.loading { opacity: .6; pointer-events: none; }
+.sc-id { font-size: 11px; font-weight: 600; letter-spacing: .7px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+.sc-name { font-size: 15px; font-weight: 700; color: var(--pine); margin-bottom: 3px; }
+.sc-route { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.sc-route .arr { color: var(--line2); }
+.sc-meta { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.sc-tag {
+  padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  background: var(--mint); color: var(--pine); border: 1px solid var(--line);
+}
+.sc-tag.risk-low  { background: var(--mint);     color: var(--emerald); border-color: var(--mint2); }
+.sc-tag.risk-mid  { background: var(--amber-bg); color: var(--amber);   border-color: var(--amber-bd); }
+.sc-tag.risk-high { background: var(--red-bg);   color: var(--red);     border-color: var(--red-bd); }
+.sc-arrow { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--line2); font-size: 20px; transition: all .18s; }
+.shipment-card:hover .sc-arrow { color: var(--emerald); right: 14px; }
+
+/* ── Page: Monitor ────────────────────────────────────────────────────── */
+#page-monitor { display: none; }
+#page-monitor.active {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  min-height: calc(100vh - 56px);
+}
+.monitor-main { padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 14px; }
+.monitor-side {
+  background: var(--card); border-left: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  position: sticky; top: 56px; height: calc(100vh - 56px); overflow: hidden;
+}
+@media (max-width: 1060px) {
+  #page-monitor.active { grid-template-columns: 1fr; }
+  .monitor-side { position: static; height: auto; max-height: 600px; border-left: none; border-top: 1px solid var(--line); }
+}
+
+/* Breadcrumb */
+.breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.breadcrumb a { color: var(--emerald); }
+.breadcrumb-sep { color: var(--line2); }
+
+/* Shipment header */
+.shipment-bar {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+.shipment-bar-title { font-size: 16px; font-weight: 700; color: var(--pine); }
+.shipment-bar-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+/* Status badge */
+.status-badge {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  border: 1.5px solid;
+}
+.status-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-badge.NORMAL   { background: var(--mint);     color: var(--pine);    border-color: var(--mint2); }
+.status-badge.NORMAL .dot   { background: var(--emerald); animation: blink 2s infinite; }
+.status-badge.WATCH    { background: var(--amber-bg); color: var(--amber);   border-color: var(--amber-bd); }
+.status-badge.WATCH .dot    { background: var(--amber);  animation: blink 1s infinite; }
+.status-badge.WARNING  { background: var(--amber-bg); color: var(--amber);   border-color: var(--amber-bd); }
+.status-badge.WARNING .dot  { background: var(--amber);  animation: blink .7s infinite; }
+.status-badge.EXCURSION{ background: var(--red-bg);   color: var(--red);     border-color: var(--red-bd); }
+.status-badge.EXCURSION .dot{ background: var(--red);    animation: blink .5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+@media (max-width: 640px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
+.stat-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; box-shadow: var(--shadow);
+}
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 700; color: var(--pine); font-variant-numeric: tabular-nums; }
+.stat-value.warn  { color: var(--amber); }
+.stat-value.alarm { color: var(--red); }
+.stat-value.ok    { color: var(--emerald); }
+
+/* Chart card */
+.chart-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 18px; box-shadow: var(--shadow);
+}
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.chart-title { font-size: 14px; font-weight: 600; color: var(--pine); }
+canvas#chart { width: 100%; height: 260px; display: block; }
+
+/* Playback */
+.playback-row {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 14px; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow);
+}
+.step-btn {
+  padding: 6px 13px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--paper); color: var(--emerald);
+  font-size: 13px; font-weight: 600; transition: all .15s;
+}
+.step-btn:hover { border-color: var(--emerald); background: var(--mint); }
+.step-btn:disabled { opacity: .4; cursor: not-allowed; }
+.progress-track { flex: 1; height: 5px; background: var(--mint); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0; background: var(--emerald); border-radius: 3px; transition: width .3s; }
+.clock-label { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 60px; text-align: right; }
+
+/* Log */
+.log-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.log-head { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--mint); }
+.log-head span { font-size: 13px; font-weight: 600; color: var(--pine); }
+.log-count { font-size: 11px; color: var(--muted); }
+.log-list { max-height: 180px; overflow-y: auto; }
+.log-entry { display: flex; gap: 10px; padding: 7px 16px; border-bottom: 1px solid var(--mint); font-size: 13px; }
+.log-entry:last-child { border-bottom: none; }
+.log-time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 44px; flex-shrink: 0; }
+.log-entry.info .log-msg  { color: var(--muted); }
+.log-entry.warn .log-msg  { color: var(--amber); }
+.log-entry.alarm .log-msg { color: var(--red); font-weight: 700; }
+
+/* ── Side Panel ──────────────────────────────────────────────────────── */
+.side-tabs { display: flex; border-bottom: 1px solid var(--line); flex-shrink: 0; background: var(--mint); }
+.side-tab {
+  flex: 1; padding: 11px; font-size: 13px; font-weight: 600;
+  color: var(--muted); background: transparent;
+  border-bottom: 3px solid transparent; transition: all .15s; text-align: center;
+}
+.side-tab:hover { color: var(--pine); }
+.side-tab.active { color: var(--pine); border-bottom-color: var(--emerald); background: var(--card); }
+.side-pane { flex: 1; overflow-y: auto; display: none; flex-direction: column; }
+.side-pane.active { display: flex; }
+
+/* Brief */
+.brief-content { padding: 14px 16px; }
+.brief-placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 10px; color: var(--muted); text-align: center; padding: 32px 20px;
+}
+.brief-placeholder .icon { font-size: 40px; opacity: .5; }
+
+.kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.kpi { background: var(--mint); border-radius: var(--radius-sm); padding: 10px 12px; border: 1px solid var(--line); }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+.kpi-value { font-size: 20px; font-weight: 800; color: var(--pine); }
+.kpi-value.alarm { color: var(--red); }
+.kpi-value.warn  { color: var(--amber); }
+
+.budget-track { height: 8px; background: var(--mint); border-radius: 4px; overflow: hidden; margin: 6px 0 3px; border: 1px solid var(--line); }
+.budget-fill { height: 100%; border-radius: 3px; transition: width .6s; }
+.budget-fill.low  { background: var(--emerald); }
+.budget-fill.mid  { background: var(--amber); }
+.budget-fill.high { background: var(--red); }
+
+.rec-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: var(--pine); color: #fff; margin: 8px 0 6px;
+}
+
+.option-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
+.option-item {
+  border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px;
+  cursor: pointer; transition: all .15s; background: var(--paper); text-align: left;
+}
+.option-item:hover { border-color: var(--line2); background: var(--mint); }
+.option-item.selected { border-color: var(--emerald); background: var(--mint); }
+.option-id { font-size: 11px; font-weight: 700; color: var(--emerald); }
+.option-label { font-size: 13px; font-weight: 600; color: var(--pine); margin: 2px 0; }
+.option-detail { font-size: 12px; color: var(--muted); }
+
+details { border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 5px; overflow: hidden; }
+summary { padding: 8px 10px; cursor: pointer; font-size: 13px; font-weight: 600; background: var(--mint); color: var(--pine); }
+details p { padding: 10px 12px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* What-if */
+.whatif-panel { padding: 10px 16px; border-top: 1px solid var(--line); background: var(--paper); }
+.whatif-panel h4 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.range-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 13px; }
+.range-row label { color: var(--muted); min-width: 120px; }
+.range-row input[type=range] { flex: 1; accent-color: var(--emerald); }
+.range-row span { min-width: 40px; text-align: right; font-weight: 600; color: var(--pine); }
+.whatif-result {
+  background: var(--mint); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 10px; font-size: 13px; color: var(--ink); margin-top: 8px;
+}
+
+/* Approve section */
+.approve-section { padding: 12px 16px; border-top: 1px solid var(--line); flex-shrink: 0; background: var(--paper); }
+.input-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; display: block; }
+.text-input {
+  width: 100%; padding: 8px 10px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); color: var(--ink); font-size: 13px;
+  transition: border-color .15s; margin-bottom: 8px;
+}
+.text-input:focus { border-color: var(--emerald); outline: none; }
+textarea.text-input { resize: vertical; min-height: 46px; }
+.approve-btn {
+  width: 100%; padding: 10px; border-radius: var(--radius-sm);
+  background: var(--emerald); color: #fff; font-size: 13px; font-weight: 700;
+  transition: background .15s;
+}
+.approve-btn:hover { background: var(--emerald2); }
+.approve-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Outcome */
+.outcome-panel {
+  margin: 14px 16px; background: var(--mint); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px;
+}
+.outcome-title { font-size: 13px; font-weight: 700; color: var(--pine); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 13px; }
+.dl dt { color: var(--muted); }
+.dl dd { color: var(--ink); }
+.alert-box { background: var(--pine); color: #fff; border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 10px; font-size: 13px; }
+
+/* ── Chatbot pane ─────────────────────────────────────────────────────── */
+.chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+.chat-bubble { max-width: 88%; padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.55; word-break: break-word; }
+.chat-bubble.user {
+  align-self: flex-end;
+  background: var(--pine); color: #fff; border-bottom-right-radius: 3px;
+}
+.chat-bubble.ai {
+  align-self: flex-start;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-bottom-left-radius: 3px; box-shadow: var(--shadow);
+}
+.chat-bubble.ai.typing { color: var(--muted); font-style: italic; }
+.chat-bubble.system {
+  align-self: center; background: transparent; color: var(--muted);
+  font-size: 12px; border: 1px dashed var(--line); padding: 5px 12px;
+  border-radius: 999px;
+}
+.chat-suggestions { padding: 0 12px 8px; display: flex; flex-wrap: wrap; gap: 6px; background: var(--paper); }
+.chat-suggestion {
+  padding: 4px 10px; border-radius: 999px; font-size: 12px;
+  background: var(--card); border: 1px solid var(--line); color: var(--emerald);
+  cursor: pointer; transition: all .15s; font-weight: 600;
+}
+.chat-suggestion:hover { background: var(--mint); border-color: var(--emerald); }
+.chat-input-row {
+  padding: 10px 12px; border-top: 1px solid var(--line);
+  display: flex; gap: 8px; background: var(--card);
+}
+.chat-input {
+  flex: 1; padding: 8px 11px; background: var(--paper); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); color: var(--ink); font-size: 13px; resize: none;
+}
+.chat-input:focus { border-color: var(--emerald); outline: none; }
+.send-btn {
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  background: var(--emerald); color: #fff; font-size: 16px; line-height: 1;
+  transition: background .15s; flex-shrink: 0;
+}
+.send-btn:hover { background: var(--emerald2); }
+.send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Page: Simulate ──────────────────────────────────────────────────── */
+#page-trigger { padding: 32px 28px 48px; max-width: 1000px; margin: 0 auto; width: 100%; }
+.trigger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 760px) { .trigger-grid { grid-template-columns: 1fr; } }
+.section-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 20px 22px; box-shadow: var(--shadow);
+}
+.section-card h2 { font-size: 15px; font-weight: 700; color: var(--pine); margin-bottom: 4px; }
+.section-card > p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+
+.scenario-selector { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+.sc-select-btn {
+  padding: 9px 6px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+  background: var(--paper); color: var(--muted); border: 1px solid var(--line);
+  transition: all .15s; text-align: center; cursor: pointer;
+}
+.sc-select-btn small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.sc-select-btn:hover { border-color: var(--emerald); color: var(--pine); }
+.sc-select-btn.active { background: var(--mint); border-color: var(--emerald); color: var(--pine); }
+
+.trigger-field { margin-bottom: 12px; }
+.trigger-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 700; transition: all .2s; margin-top: 8px; cursor: pointer;
+}
+.trigger-btn.danger {
+  background: var(--red); color: #fff; border: none;
+}
+.trigger-btn.danger:hover { background: #991b14; }
+.trigger-btn.danger:disabled { opacity: .4; cursor: not-allowed; }
+
+.excursion-indicator {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
+  text-align: center; background: var(--paper); margin-top: 14px;
+}
+.excursion-indicator.active-exc { border-color: var(--red-bd); background: var(--red-bg); }
+.exc-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.exc-value { font-size: 28px; font-weight: 800; color: var(--muted); }
+.excursion-indicator.active-exc .exc-value { color: var(--red); }
+.exc-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Trigger AI result */
+#triggerAIResult {
+  min-height: 180px; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; text-align: center; padding: 20px;
+  border: 1px dashed var(--line); border-radius: var(--radius-sm); background: var(--paper);
+  margin-bottom: 12px;
+}
+#triggerAIResult.loaded { display: block; padding: 0; border: none; background: none; }
+
+.trigger-chat-row { display: flex; gap: 8px; margin-top: 10px; }
+.trigger-chat-history { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+
+/* ── Page: Audit ─────────────────────────────────────────────────────── */
+#page-audit { padding: 32px 28px 48px; max-width: 1100px; margin: 0 auto; width: 100%; }
+.table-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.table-head { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; background: var(--mint); }
+.table-head h2 { font-size: 15px; font-weight: 700; color: var(--pine); }
+.verify-btn {
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  background: var(--card); border: 1px solid var(--line); color: var(--emerald);
+  font-size: 13px; font-weight: 600; transition: all .15s;
+}
+.verify-btn:hover { border-color: var(--emerald); background: var(--mint); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 9px 16px; text-align: left; font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+  background: var(--paper); border-bottom: 1px solid var(--line);
+}
+td { padding: 9px 16px; font-size: 13px; border-bottom: 1px solid var(--mint); color: var(--ink); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--mint); }
+.mono { font-family: Consolas, "Cascadia Code", monospace; font-size: 12px; color: var(--muted); }
+#verifyResult { padding: 12px 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--pine); color: #fff;
+  padding: 10px 20px; border-radius: var(--radius); font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2); z-index: 300; max-width: 90vw;
+  opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+#toast.show { opacity: 1; pointer-events: auto; }
+#toast.error { background: var(--red); }
+#toast.success { background: var(--emerald); }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">PharmaGuard<small>Cold chain excursion decisions</small></div>
-  <div class="scenarios" role="group" aria-label="Choose a shipment scenario">
-    <button data-sc="borderline" aria-pressed="false">Tarmac delay (our story)</button>
-    <button data-sc="minor" aria-pressed="false">Mild excursion</button>
-    <button data-sc="severe" aria-pressed="false">Cargo hold failure</button>
+<div id="app">
+
+  <!-- ── Topbar ────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <div class="brand">PharmaGuard <small>Cold Chain Excursion Monitor</small></div>
+    <div class="topbar-spacer"></div>
+    <div class="nav-pills">
+      <button class="nav-pill active" data-page="list">Shipments</button>
+      <button class="nav-pill" data-page="trigger">Simulate</button>
+      <button class="nav-pill" data-page="audit">Audit Trail</button>
+    </div>
   </div>
-</header>
 
-<main>
-  <section id="monitor">
-    <h2 id="shipTitle">Pick a scenario to start monitoring a shipment</h2>
-    <div id="banner" class="banner NORMAL" role="status" aria-live="polite"><span>No shipment loaded</span></div>
-    <div class="stats">
-      <div class="stat"><b id="sTemp">-</b><span>Temperature now</span></div>
-      <div class="stat"><b id="sOut">-</b><span>Minutes out of range</span></div>
-      <div class="stat"><b id="sSlope">-</b><span>Trend per minute</span></div>
-      <div class="stat"><b id="sProj">-</b><span>Projected in 45 min</span></div>
+  <!-- ── Shipments List ────────────────────────────────────────────────── -->
+  <div id="page-list" class="page active">
+    <div class="page-header">
+      <h1>Active Shipments</h1>
+      <p>Select a shipment to begin real-time cold chain monitoring</p>
     </div>
-    <canvas id="chart" role="img" aria-label="Temperature chart for the shipment"></canvas>
-    <div class="controls">
-      <button class="btn primary" id="play" disabled>Play</button>
-      <button class="btn" id="stepBtn" disabled>Step 5 min</button>
-      <div class="progress" aria-hidden="true"><i id="prog"></i></div>
-      <span class="muted" id="clock">06:00</span>
+    <div class="shipment-grid">
+      <div class="shipment-card" id="card-borderline" onclick="selectShipment('borderline')">
+        <div class="sc-id">SHP-BORDERLINE</div>
+        <div class="sc-name">Tarmac Delay — Biologics</div>
+        <div class="sc-route">Hyderabad Plant <span class="arr">→</span> Delhi Hospital</div>
+        <div class="sc-meta">
+          <span class="sc-tag">BIO-001</span>
+          <span class="sc-tag risk-mid">Moderate Risk</span>
+          <span class="sc-tag">4–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
+      <div class="shipment-card" id="card-minor" onclick="selectShipment('minor')">
+        <div class="sc-id">SHP-MINOR</div>
+        <div class="sc-name">Customs Hold — Insulin</div>
+        <div class="sc-route">Pune Plant <span class="arr">→</span> Bengaluru Hospital</div>
+        <div class="sc-meta">
+          <span class="sc-tag">INS-001</span>
+          <span class="sc-tag risk-low">Low Risk</span>
+          <span class="sc-tag">2–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
+      <div class="shipment-card" id="card-severe" onclick="selectShipment('severe')">
+        <div class="sc-id">SHP-SEVERE</div>
+        <div class="sc-name">Cargo Hold Failure — Biologics</div>
+        <div class="sc-route">Hyderabad Plant <span class="arr">→</span> Mumbai Distributor</div>
+        <div class="sc-meta">
+          <span class="sc-tag">BIO-001</span>
+          <span class="sc-tag risk-high">High Risk</span>
+          <span class="sc-tag">4–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
     </div>
-    <h3>Watchdog log</h3>
-    <ul id="log" aria-live="polite"></ul>
-  </section>
+  </div>
 
-  <section id="incident" class="hidden" aria-live="polite">
-    <h2 id="incTitle">Decision brief</h2>
-    <div id="brief"></div>
+  <!-- ── Monitor ────────────────────────────────────────────────────────── -->
+  <div id="page-monitor" class="page">
+    <div class="monitor-main">
+      <div class="breadcrumb">
+        <a href="#" onclick="navigate('list');return false">Shipments</a>
+        <span class="breadcrumb-sep">›</span>
+        <span id="breadcrumbName">—</span>
+      </div>
 
-    <h3>Challenge the recommendation</h3>
-    <label for="q">Question for the Challenger</label>
-    <input type="text" id="q" placeholder="What if the batch stays warm for 2 more hours?">
-    <label for="extra">Extra time at this temperature: <span id="extraVal">120</span> min</label>
-    <input type="range" id="extra" min="0" max="360" step="15" value="120">
-    <label for="atemp">Assumed temperature (C)</label>
-    <input type="number" id="atemp" step="0.1">
-    <div class="controls"><button class="btn" id="askBtn">Run what-if</button></div>
-    <div id="challengeOut"></div>
+      <div class="shipment-bar">
+        <div>
+          <div class="shipment-bar-title" id="shipBarTitle">—</div>
+          <div class="shipment-bar-sub" id="shipBarSub">—</div>
+        </div>
+        <div class="status-badge NORMAL" id="statusBadge">
+          <div class="dot"></div>
+          <span id="statusText">Normal</span>
+        </div>
+      </div>
 
-    <h3>Your decision</h3>
-    <label for="who">Approver</label>
-    <input type="text" id="who" value="QA Manager">
-    <label for="note">Note (required if you pick a different option than recommended)</label>
-    <textarea id="note" rows="2"></textarea>
-    <div class="controls"><button class="btn primary" id="approveBtn">Approve decision</button></div>
-  </section>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Temperature</div><div class="stat-value" id="sTemp">—</div></div>
+        <div class="stat-card"><div class="stat-label">Min Out of Range</div><div class="stat-value" id="sOut">—</div></div>
+        <div class="stat-card"><div class="stat-label">Trend / min</div><div class="stat-value" id="sSlope">—</div></div>
+        <div class="stat-card"><div class="stat-label">Proj. in 45 min</div><div class="stat-value" id="sProj">—</div></div>
+      </div>
 
-  <section id="outcome" class="full hidden">
-    <h2>What happened after approval</h2>
-    <div id="outcomeBody"></div>
-  </section>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Temperature Timeline</div>
+          <span id="chartLocation" style="font-size:12px;color:var(--muted)">—</span>
+        </div>
+        <canvas id="chart" role="img" aria-label="Temperature chart"></canvas>
+      </div>
 
-  <section class="full">
-    <h2>Audit trail</h2>
-    <div class="controls">
-      <button class="btn" id="verifyBtn">Verify audit trail</button>
-      <span id="verifyOut" class="muted">Each entry stores the hash of the entry before it.</span>
+      <div class="playback-row">
+        <button class="step-btn" id="stepBtn" disabled>+ 5 min</button>
+        <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+        <div class="clock-label" id="clock">—</div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-head">
+          <span>Watchdog Log</span>
+          <span class="log-count" id="logCount">0 events</span>
+        </div>
+        <div class="log-list" id="logList">
+          <div class="log-entry info"><span class="log-time">—</span><span class="log-msg">Load a shipment to start monitoring</span></div>
+        </div>
+      </div>
     </div>
-    <div style="overflow:auto"><table><thead><tr><th>#</th><th>Time (UTC)</th><th>Event</th><th>Incident</th><th>Hash</th></tr></thead><tbody id="auditRows"></tbody></table></div>
-  </section>
-</main>
-<div id="toast" class="hidden" role="alert"></div>
+
+    <!-- Side panel -->
+    <div class="monitor-side">
+      <div class="side-tabs">
+        <button class="side-tab active" data-tab="brief">Decision Brief</button>
+        <button class="side-tab" data-tab="chat">AI Assistant</button>
+      </div>
+
+      <!-- Brief pane -->
+      <div class="side-pane active" id="pane-brief">
+        <div id="briefContent" style="flex:1;display:flex;flex-direction:column">
+          <div class="brief-placeholder">
+            <div class="icon">📋</div>
+            <div style="font-weight:600;color:var(--pine)">No incident yet</div>
+            <div style="font-size:12px">An excursion must be detected before the decision brief is generated.</div>
+          </div>
+        </div>
+
+        <div id="whatifSection" class="hidden">
+          <div class="whatif-panel">
+            <h4>What-If Scenario</h4>
+            <div class="range-row">
+              <label>Extra time</label>
+              <input type="range" id="wExtra" min="0" max="360" step="15" value="120" oninput="$('wExtraVal').textContent=this.value">
+              <span><span id="wExtraVal">120</span> min</span>
+            </div>
+            <div class="range-row">
+              <label>Assumed temp (°C)</label>
+              <input type="number" id="wTemp" step="0.5" style="width:64px;padding:4px 8px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)">
+            </div>
+            <button class="step-btn" style="width:100%;margin-top:4px" id="runWhatif" onclick="runWhatIf()">Run What-If</button>
+            <div id="whatifResult" class="whatif-result hidden"></div>
+          </div>
+        </div>
+
+        <div id="approveSection" class="approve-section hidden">
+          <label class="input-label">Approver</label>
+          <input class="text-input" id="approverName" value="QA Manager">
+          <label class="input-label">Note (required if overriding recommendation)</label>
+          <textarea class="text-input" id="approveNote" rows="2"></textarea>
+          <button class="approve-btn" id="approveBtn" onclick="approveDecision()">Approve Decision</button>
+        </div>
+      </div>
+
+      <!-- Chat pane -->
+      <div class="side-pane" id="pane-chat">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-bubble system">Ask PharmaGuard Assistant anything about this shipment</div>
+        </div>
+        <div class="chat-suggestions" id="chatSuggestions">
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">What happened to this batch?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">Is it safe to release?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">What does the SOP say?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">Explain stability budget</button>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask PharmaGuard Assistant…" onkeydown="chatKeydown(event)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Simulate ────────────────────────────────────────────────────────── -->
+  <div id="page-trigger" class="page">
+    <div class="page-header">
+      <h1>Simulate Excursion</h1>
+      <p>Trigger a temperature excursion event and get AI-powered analysis and recommendations</p>
+    </div>
+    <div class="trigger-grid">
+      <!-- Left: trigger controls -->
+      <div class="section-card">
+        <h2>1 — Select Scenario &amp; Trigger</h2>
+        <p>Choose a shipment scenario then fire the excursion trigger.</p>
+
+        <div class="scenario-selector">
+          <button class="sc-select-btn active" data-sc="borderline" onclick="selectTriggerScenario(this)">Tarmac Delay<small>BIO-001</small></button>
+          <button class="sc-select-btn" data-sc="minor" onclick="selectTriggerScenario(this)">Customs Hold<small>INS-001</small></button>
+          <button class="sc-select-btn" data-sc="severe" onclick="selectTriggerScenario(this)">Cargo Failure<small>BIO-001</small></button>
+        </div>
+
+        <div class="trigger-field">
+          <label class="input-label" style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block">Peak Temperature Override (°C)</label>
+          <input type="number" id="triggerTemp" class="text-input" value="14" step="0.5" min="5" max="40">
+        </div>
+        <div class="trigger-field">
+          <label class="input-label" style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block">Excursion Duration (minutes)</label>
+          <input type="number" id="triggerDuration" class="text-input" value="45" step="5" min="10" max="360">
+        </div>
+
+        <button class="trigger-btn danger" id="triggerBtn" onclick="triggerExcursion()">🚨 Trigger Excursion</button>
+
+        <div class="excursion-indicator" id="excursionIndicator">
+          <div class="exc-label">Excursion Status</div>
+          <div class="exc-value" id="excValue">None</div>
+          <div class="exc-sub" id="excSub">No active excursion</div>
+        </div>
+      </div>
+
+      <!-- Right: AI results -->
+      <div class="section-card">
+        <h2>2 — AI Analysis &amp; Recommendations</h2>
+        <p>Gemini AI will analyse the excursion and provide recommendations for the QA Manager.</p>
+
+        <div id="triggerAIResult">Trigger an excursion to see AI recommendations here.</div>
+
+        <div id="triggerChatArea" class="hidden">
+          <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:6px">
+            <label class="input-label" style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block">Follow-up question</label>
+            <div class="trigger-chat-row">
+              <input type="text" id="triggerChatInput" class="text-input" style="margin:0" placeholder="Ask the AI a follow-up…" onkeydown="if(event.key==='Enter')sendTriggerChat()">
+              <button class="send-btn" style="border-radius:var(--radius-sm)" onclick="sendTriggerChat()">↑</button>
+            </div>
+            <div class="trigger-chat-history" id="triggerChatHistory"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Audit Trail ─────────────────────────────────────────────────────── -->
+  <div id="page-audit" class="page">
+    <div class="page-header">
+      <h1>Audit Trail</h1>
+      <p>Tamper-evident log — each entry stores the hash of the previous entry</p>
+    </div>
+    <div class="table-card">
+      <div class="table-head">
+        <h2>Event Log</h2>
+        <button class="verify-btn" onclick="verifyAudit()">🔒 Verify Chain Integrity</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>Time (UTC)</th><th>Event</th><th>Incident</th><th>Hash</th></tr></thead>
+          <tbody id="auditBody">
+            <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:28px">No events yet. Load a shipment to generate audit entries.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="verifyResult">Chain not yet verified.</div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── Toast ─────────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// ── Utilities ──────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hhmm = iso => new Date(iso).toISOString().substr(11, 5);
-const inr = n => 'INR ' + Number(n).toLocaleString('en-IN');
 
-const S = { data: null, idx: 0, timer: null, busy: false, wd: null, incidentID: null, brief: null, chosen: null, status: null, seen: new Set(), tsIndex: {} };
+let toastTimer;
+function toast(msg, type = '') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 5000);
+}
 
-// ---------- API ----------
+// ── Navigation ─────────────────────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  if (page === 'audit') refreshAudit();
+}
+document.querySelectorAll('.nav-pill').forEach(b => b.addEventListener('click', () => navigate(b.dataset.page)));
+
+// ── State ──────────────────────────────────────────────────────────────────
+const S = {
+  data: null, idx: 0, timer: null, busy: false,
+  wd: null, incidentID: null, brief: null, chosen: null,
+  status: null, seen: new Set(), tsIndex: {},
+  chatHistory: [],
+  triggerScenario: 'borderline',
+  triggerContext: null,
+  triggerChatHistory: []
+};
+
+// ── API helpers ────────────────────────────────────────────────────────────
 async function api(action, body) {
-  const r = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const r = await fetch('/api/' + action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j.error && j.error.message) || 'Request failed (' + r.status + ')');
   return JSON.parse(j.value);
 }
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
-  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.add('hidden'), 6000);
+
+async function geminiChat(messages, context) {
+  return await api('geminiChat', {
+    messages: JSON.stringify(messages),
+    context: JSON.stringify(context || {})
+  });
 }
 
-// ---------- scenario loading ----------
-document.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => loadScenario(b.dataset.sc)));
+// ── Side tab switching ─────────────────────────────────────────────────────
+document.querySelectorAll('.side-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.side-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-' + tab.dataset.tab).classList.add('active');
+  });
+});
 
-async function loadScenario(name) {
-  pause();
-  document.querySelectorAll('[data-sc]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sc === name)));
+// ── Shipment selection ─────────────────────────────────────────────────────
+async function selectShipment(name) {
+  const card = document.getElementById('card-' + name);
+  card.classList.add('loading');
   try {
     const d = await api('loadScenario', { scenario: name });
-    Object.assign(S, { data: d, idx: 0, wd: null, incidentID: null, brief: null, chosen: null, status: null, seen: new Set(), tsIndex: {} });
+    Object.assign(S, {
+      data: d, idx: 0, wd: null, incidentID: null, brief: null,
+      chosen: null, status: null, seen: new Set(), tsIndex: {}, chatHistory: []
+    });
     d.readings.forEach((r, i) => { S.tsIndex[r.ts] = i; });
-    $('#shipTitle').textContent = `${d.shipmentID}: ${d.product}, ${d.origin} to ${d.destination}`;
-    $('#log').innerHTML = '';
-    $('#incident').classList.add('hidden'); $('#outcome').classList.add('hidden');
-    $('#challengeOut').innerHTML = ''; $('#note').value = '';
-    $('#play').disabled = false; $('#stepBtn').disabled = false; $('#approveBtn').disabled = false;
-    log(d.readings[0].ts, 'Loaded simulated telemetry. Safe range is ' + d.minTemp + ' to ' + d.maxTemp + ' C.', 'ignore');
+
+    $('breadcrumbName').textContent = d.shipmentID;
+    $('shipBarTitle').textContent = `${d.shipmentID}: ${d.product}`;
+    $('shipBarSub').textContent = `${d.origin}  →  ${d.destination}`;
+    $('logList').innerHTML = '';
+    logEntry(d.readings[0].ts, `Telemetry loaded. Safe range ${d.minTemp}–${d.maxTemp} °C.`, 'info');
+
+    $('briefContent').innerHTML = `
+      <div class="brief-placeholder">
+        <div class="icon">📋</div>
+        <div style="font-weight:600;color:var(--pine)">Monitoring active</div>
+        <div style="font-size:12px">The decision brief will appear when an excursion is detected.</div>
+      </div>`;
+    $('whatifSection').classList.add('hidden');
+    $('approveSection').classList.add('hidden');
+    $('chatMessages').innerHTML = '<div class="chat-bubble system">Shipment loaded. Ask PharmaGuard Assistant anything about it.</div>';
+    $('chatSuggestions').style.display = '';
+
+    $('stepBtn').disabled = false;
+    navigate('monitor');
     await step(0);
-    refreshAudit();
-  } catch (e) { toast(e.message); }
+    play();
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    card.classList.remove('loading');
+  }
 }
 
-// ---------- replay + Watchdog ----------
-$('#play').addEventListener('click', () => (S.timer ? pause() : play()));
-$('#stepBtn').addEventListener('click', () => step(5));
-function play() { if (!S.data) return; if (S.idx >= S.data.readings.length - 1) return; $('#play').textContent = 'Pause'; S.timer = setInterval(() => step(5), 350); }
-function pause() { clearInterval(S.timer); S.timer = null; $('#play').textContent = 'Play'; }
+// ── Playback ───────────────────────────────────────────────────────────────
+$('stepBtn').addEventListener('click', () => step(5));
+
+function play() {
+  if (!S.data || S.idx >= S.data.readings.length - 1) return;
+  if (S.timer) return; // already playing
+  S.timer = setInterval(() => step(5), 350);
+}
+function pause() {
+  clearInterval(S.timer); S.timer = null;
+}
 
 async function step(n) {
   if (!S.data || S.busy) return;
   S.busy = true;
   try {
     S.idx = Math.min(S.idx + n, S.data.readings.length - 1);
-    const up = S.data.readings[S.idx].ts;
-    const wd = await api('runWatchdog', { shipmentID: S.data.shipmentID, upTo: up });
+    const wd = await api('runWatchdog', { shipmentID: S.data.shipmentID, upTo: S.data.readings[S.idx].ts });
     S.wd = wd;
     narrate(wd);
     render();
-    if (wd.status === 'EXCURSION' && wd.incidentID && !S.incidentID) { pause(); S.incidentID = wd.incidentID; await openIncident(); }
+    // Excursion detected for the first time → open brief but KEEP playing
+    if (wd.status === 'EXCURSION' && wd.incidentID && !S.incidentID) {
+      S.incidentID = wd.incidentID;
+      openIncident(); // fire-and-forget, don't await so playback continues
+    }
     if (S.idx >= S.data.readings.length - 1) pause();
-  } catch (e) { pause(); toast(e.message); } finally { S.busy = false; }
+  } catch (e) { pause(); toast(e.message, 'error'); }
+  finally { S.busy = false; }
 }
 
-function log(ts, text, kind) {
-  const li = document.createElement('li'); li.className = kind || '';
-  li.innerHTML = `<time>${hhmm(ts)}</time><span>${esc(text)}</span>`;
-  $('#log').prepend(li);
+function logEntry(ts, text, kind) {
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + (kind || 'info');
+  div.innerHTML = `<span class="log-time">${hhmm(ts)}</span><span class="log-msg">${esc(text)}</span>`;
+  $('logList').prepend(div);
+  const c = $('logList').children.length;
+  $('logCount').textContent = c + ' event' + (c !== 1 ? 's' : '');
 }
+
 function narrate(wd) {
-  wd.blips.forEach(b => { const k = 'b' + b.start; if (!S.seen.has(k)) { S.seen.add(k); log(b.end, `Ignored a short blip: ${b.peak} C for ${b.minutes} min (rule needs 30 min).`, 'ignore'); } });
-  wd.rejected.forEach(r => { const k = 'r' + r.ts; if (!S.seen.has(k)) { S.seen.add(k); log(r.ts, `Rejected a ${r.tempC} C reading: ${r.reason}.`, 'ignore'); } });
+  wd.blips?.forEach(b => {
+    const k = 'b' + b.start;
+    if (!S.seen.has(k)) { S.seen.add(k); logEntry(b.end, `Blip ignored: ${b.peak} °C for ${b.minutes} min (needs 30 min to confirm).`, 'info'); }
+  });
+  wd.rejected?.forEach(r => {
+    const k = 'r' + r.ts;
+    if (!S.seen.has(k)) { S.seen.add(k); logEntry(r.ts, `Reading rejected: ${r.tempC} °C — ${r.reason}.`, 'info'); }
+  });
   if (wd.status !== S.status) {
     const t = wd.current.ts;
-    if (wd.status === 'WATCH') log(t, `Out of range at ${wd.current.tempC} C. Timer started, no alert yet.`, 'warn');
-    if (wd.status === 'WARNING') log(t, `Temperature rising ${wd.current.slopePerMin} C/min. Projected ${wd.current.projected45} C in 45 min. Heads-up sent to QA Manager.`, 'warn');
-    if (wd.status === 'EXCURSION') log(t, `True excursion declared: ${wd.excursion.minutes} min out of range, peak ${wd.excursion.peak} C. Incident ${wd.incidentID} created.`, 'alarm');
-    if (wd.status === 'NORMAL' && S.status) log(t, 'Back in range.', 'ignore');
+    if (wd.status === 'WATCH')     logEntry(t, `Out of range at ${wd.current.tempC} °C. Watching — alert after 30 min.`, 'warn');
+    if (wd.status === 'WARNING')   logEntry(t, `Rising fast: ${wd.current.slopePerMin} °C/min. Projected ${wd.current.projected45} °C in 45 min.`, 'warn');
+    if (wd.status === 'EXCURSION') logEntry(t, `⚠ EXCURSION declared: ${wd.excursion.minutes} min out of range, peak ${wd.excursion.peak} °C. Incident ${wd.incidentID}.`, 'alarm');
+    if (wd.status === 'NORMAL' && S.status) logEntry(t, 'Temperature back in range.', 'info');
     S.status = wd.status;
   }
 }
 
 function render() {
+  if (!S.wd) return;
   const wd = S.wd, c = wd.current, d = S.data;
-  const msg = {
-    NORMAL: ['All readings in range', ''], WATCH: ['Out of range, watching', `${c.minutesOut} min so far, alert after 30 min`],
-    WARNING: ['Rising fast', `Projected ${c.projected45} C in 45 min`], EXCURSION: ['True excursion declared', `Incident ${wd.incidentID || ''}`]
-  }[wd.status];
-  $('#banner').className = 'banner ' + wd.status;
-  $('#banner').innerHTML = `<span>${esc(msg[0])}</span><span class="sub">${esc(msg[1])} · ${esc(c.location)}</span>`;
-  $('#sTemp').textContent = c.tempC.toFixed(1) + ' C';
-  $('#sOut').textContent = c.minutesOut;
-  $('#sSlope').textContent = (c.slopePerMin > 0 ? '+' : '') + c.slopePerMin.toFixed(2);
-  $('#sProj').textContent = c.projected45.toFixed(1) + ' C';
-  $('#clock').textContent = hhmm(c.ts) + ' UTC';
-  $('#prog').style.width = (100 * S.idx / (d.readings.length - 1)) + '%';
+  const statusLabels = { NORMAL: 'Normal', WATCH: 'Watching', WARNING: 'Warning', EXCURSION: 'Excursion Detected' };
+  $('statusBadge').className = 'status-badge ' + wd.status;
+  $('statusText').textContent = statusLabels[wd.status] || wd.status;
+
+  const hot = c.tempC > d.maxTemp || c.tempC < d.minTemp;
+  $('sTemp').textContent = c.tempC.toFixed(1) + ' °C';
+  $('sTemp').className = 'stat-value ' + (hot ? 'alarm' : 'ok');
+  $('sOut').textContent = c.minutesOut || '0';
+  $('sOut').className = 'stat-value ' + (c.minutesOut > 0 ? 'warn' : '');
+  $('sSlope').textContent = (c.slopePerMin > 0 ? '+' : '') + c.slopePerMin.toFixed(2);
+  $('sProj').textContent = c.projected45.toFixed(1) + ' °C';
+  $('sProj').className = 'stat-value ' + (c.projected45 > d.maxTemp ? 'warn' : '');
+  $('clock').textContent = hhmm(c.ts) + ' UTC';
+  $('chartLocation').textContent = c.location;
+  $('progFill').style.width = (100 * S.idx / (d.readings.length - 1)) + '%';
   draw();
 }
 
-// ---------- chart ----------
+// ── Chart ──────────────────────────────────────────────────────────────────
 function draw() {
-  const cv = $('#chart'), dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  const cv = $('chart'), dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
   cv.width = w * dpr; cv.height = h * dpr;
-  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
   if (!S.data || !S.wd) return;
-  const R = S.data.readings, N = R.length - 1, pad = { l: 42, r: 12, t: 12, b: 26 };
-  const yMax = Math.ceil((Math.max(...R.map(r => r.tempC)) + 1) / 2) * 2, yMin = 0;
-  const X = i => pad.l + (w - pad.l - pad.r) * i / N, Y = t => pad.t + (h - pad.t - pad.b) * (1 - (t - yMin) / (yMax - yMin));
+
+  const R = S.data.readings, N = R.length - 1;
+  const pad = { l: 44, r: 14, t: 14, b: 28 };
   const lo = S.data.minTemp, hi = S.data.maxTemp;
-  g.fillStyle = '#e6f2ea'; g.fillRect(pad.l, Y(hi), w - pad.l - pad.r, Y(lo) - Y(hi));
-  g.font = '12px sans-serif'; g.textBaseline = 'middle';
-  g.strokeStyle = '#e1ece5'; g.fillStyle = '#5b7066'; g.textAlign = 'right';
-  for (let t = yMin; t <= yMax; t += 2) { g.beginPath(); g.moveTo(pad.l, Y(t)); g.lineTo(w - pad.r, Y(t)); g.stroke(); g.fillText(t, pad.l - 6, Y(t)); }
+  const visible = R.slice(0, S.idx + 1);
+  const yMax = Math.ceil((Math.max(...visible.map(r => r.tempC), hi + 1) + 1) / 2) * 2;
+  const yMin = Math.max(0, Math.floor((Math.min(...visible.map(r => r.tempC), lo - 1)) / 2) * 2);
+  const X = i => pad.l + (w - pad.l - pad.r) * i / Math.max(N, 1);
+  const Y = t => pad.t + (h - pad.t - pad.b) * (1 - (t - yMin) / (yMax - yMin));
+
+  // Safe zone
+  g.fillStyle = 'rgba(30,138,91,.09)';
+  g.fillRect(pad.l, Y(hi), w - pad.l - pad.r, Y(lo) - Y(hi));
+  g.setLineDash([5, 4]); g.lineWidth = 1; g.strokeStyle = 'rgba(31,138,91,.3)';
+  g.beginPath(); g.moveTo(pad.l, Y(hi)); g.lineTo(w - pad.r, Y(hi)); g.stroke();
+  g.beginPath(); g.moveTo(pad.l, Y(lo)); g.lineTo(w - pad.r, Y(lo)); g.stroke();
+  g.setLineDash([]);
+
+  // Grid + labels
+  g.font = '11px "Segoe UI", sans-serif'; g.fillStyle = '#5b7066';
+  g.strokeStyle = 'rgba(207,224,214,.6)'; g.lineWidth = 1;
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (let t = yMin; t <= yMax; t += 2) {
+    g.beginPath(); g.moveTo(pad.l, Y(t)); g.lineTo(w - pad.r, Y(t)); g.stroke();
+    g.fillText(t + '°', pad.l - 6, Y(t));
+  }
   g.textAlign = 'center'; g.textBaseline = 'top';
-  for (let i = 0; i <= N; i += 60) g.fillText(hhmm(R[i].ts), X(i), h - pad.b + 6);
-  g.textAlign = 'left'; g.fillStyle = '#1f8a5b'; g.fillText(`Safe range ${lo} to ${hi} C`, pad.l + 6, Y(hi) + 4);
-  // ignored blips
-  S.wd.blips.forEach(b => {
+  const step = Math.max(1, Math.floor(N / 6));
+  for (let i = 0; i <= N; i += step) {
+    g.fillText(hhmm(R[i].ts), X(i), h - pad.b + 5);
+  }
+
+  // Safe range label
+  g.textAlign = 'left'; g.fillStyle = 'rgba(31,138,91,.7)'; g.font = '11px sans-serif';
+  g.fillText(`Safe range ${lo}–${hi} °C`, pad.l + 6, Y(hi) + 4);
+
+  // Blip highlights
+  S.wd.blips?.forEach(b => {
     const a = S.tsIndex[b.start], e = S.tsIndex[b.end];
-    g.fillStyle = 'rgba(110,125,118,.22)'; g.fillRect(X(a - 1), pad.t, X(e + 1) - X(a - 1), h - pad.t - pad.b);
-    g.fillStyle = '#5b7066'; g.textAlign = 'left'; g.fillText('blip ignored', X(a) + 4, pad.t + 4);
+    if (a == null || e == null) return;
+    g.fillStyle = 'rgba(91,112,102,.08)';
+    g.fillRect(X(a), pad.t, X(e + 1) - X(a), h - pad.t - pad.b);
   });
-  // excursion shading
+
+  // Excursion highlight
   if (S.wd.excursion) {
     const a = S.tsIndex[S.wd.excursion.start];
-    g.fillStyle = 'rgba(180,35,24,.10)'; g.fillRect(X(a), pad.t, X(S.idx) - X(a), h - pad.t - pad.b);
+    if (a != null) {
+      g.fillStyle = 'rgba(180,35,24,.08)';
+      g.fillRect(X(a), pad.t, X(S.idx) - X(a), h - pad.t - pad.b);
+    }
   }
-  // accepted line (rejected readings are skipped)
-  const rej = new Set(S.wd.rejected.map(r => r.ts));
+
+  // Temperature line
+  const rej = new Set(S.wd.rejected?.map(r => r.ts) || []);
   let last = null; g.lineWidth = 2.2;
   for (let i = 0; i <= S.idx; i++) {
     if (rej.has(R[i].ts)) continue;
-    if (last !== null) { g.strokeStyle = (R[i].tempC > hi || R[i].tempC < lo) ? '#b42318' : '#1f8a5b'; g.beginPath(); g.moveTo(X(last), Y(R[last].tempC)); g.lineTo(X(i), Y(R[i].tempC)); g.stroke(); }
+    if (last !== null) {
+      const hot = R[i].tempC > hi || R[i].tempC < lo;
+      g.strokeStyle = hot ? '#b42318' : '#1f8a5b';
+      g.lineWidth = hot ? 2.5 : 2.2;
+      g.beginPath(); g.moveTo(X(last), Y(R[last].tempC)); g.lineTo(X(i), Y(R[i].tempC)); g.stroke();
+    }
     last = i;
   }
-  // rejected markers
-  S.wd.rejected.forEach(r => {
-    const i = S.tsIndex[r.ts], x = X(i), y = Y(r.tempC);
-    g.strokeStyle = '#b42318'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 5, y - 5); g.lineTo(x + 5, y + 5); g.moveTo(x + 5, y - 5); g.lineTo(x - 5, y + 5); g.stroke();
-    g.fillStyle = '#b42318'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('sensor error rejected', x + 9, y);
+
+  // Rejected markers (×)
+  S.wd.rejected?.forEach(r => {
+    const i = S.tsIndex[r.ts]; if (i == null) return;
+    g.strokeStyle = '#8a5a00'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(X(i)-5, Y(r.tempC)-5); g.lineTo(X(i)+5, Y(r.tempC)+5);
+    g.moveTo(X(i)+5, Y(r.tempC)-5); g.lineTo(X(i)-5, Y(r.tempC)+5); g.stroke();
+    g.fillStyle = '#8a5a00'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '11px sans-serif';
+    g.fillText('sensor rejected', X(i) + 8, Y(r.tempC));
   });
-  if (last !== null) { g.fillStyle = '#0f3d2e'; g.beginPath(); g.arc(X(last), Y(R[last].tempC), 4.5, 0, 6.3); g.fill(); }
+
+  // Current reading dot
+  if (last !== null) {
+    const hot = R[last].tempC > hi;
+    g.fillStyle = hot ? '#b42318' : '#1f8a5b';
+    g.beginPath(); g.arc(X(last), Y(R[last].tempC), 5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = hot ? 'rgba(180,35,24,.25)' : 'rgba(31,138,91,.25)';
+    g.lineWidth = 4; g.beginPath(); g.arc(X(last), Y(R[last].tempC), 9, 0, Math.PI * 2); g.stroke();
+  }
 }
 window.addEventListener('resize', draw);
 
-// ---------- incident + brief ----------
+// ── Incident + Brief ──────────────────────────────────────────────────────
 async function openIncident() {
-  $('#incident').classList.remove('hidden');
-  $('#brief').innerHTML = '<p class="muted">Stability, SOP and decision agents are working...</p>';
-  $('#atemp').value = S.wd.current.tempC;
-  $('#incident').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('briefContent').innerHTML = `
+    <div class="brief-placeholder">
+      <div class="icon">🚨</div>
+      <div style="font-weight:600;color:var(--red)">Excursion detected</div>
+      <div style="font-size:12px">Stability, SOP and decision agents are working…</div>
+    </div>`;
   try {
     S.brief = await api('analyze', { incidentID: S.incidentID });
     S.chosen = S.brief.recommendation.recommended;
     renderBrief();
+    addChatBubble('system', `Incident ${S.brief.incidentID} detected. Budget ${S.brief.stability.usedPct}% used. Recommended: Option ${S.brief.recommendation.recommended}.`);
     refreshAudit();
-  } catch (e) { toast(e.message); }
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 function renderBrief() {
   const b = S.brief, st = b.stability, rec = b.recommendation, n = b.narrative;
-  const cls = st.usedPct > 100 ? 'high' : st.usedPct >= 50 ? 'mid' : '';
-  $('#incTitle').textContent = `Decision brief for ${b.incidentID}`;
-  $('#brief').innerHTML = `
-    <p class="muted">${esc(b.product)} · ${esc(b.route)} · detected ${hhmm(b.detectedAt)} UTC at ${esc(b.location)}</p>
-    <p>Watchdog ignored ${b.watchdog.blipsIgnored} short blip(s) and rejected ${b.watchdog.readingsRejected} bad reading(s) before declaring this excursion.</p>
-    <h3>How much damage? (Stability agent)</h3>
-    <div class="meter" aria-label="Stability budget used"><i class="${cls}" style="width:${Math.min(st.usedPct, 100)}%"></i><u style="left:50%"></u></div>
-    <p><b>${st.usedPct}%</b> of the stability budget used (${st.exposureMin} of ${st.budgetMin} minutes-equivalent at the upper limit). Peak ${st.peakTemp} C, ${st.minutesAbove} min above range, mean kinetic temperature ${st.mktC} C.</p>
-    <h3>Recommendation</h3>
-    <p><span class="rec">Option ${rec.recommended}: ${esc(rec.options.find(o => o.id === rec.recommended).label)}</span></p>
-    <p>${esc(n.summary)}</p>
-    <p class="tag">Explanation by ${n.source === 'llm' ? 'SAP Generative AI Hub' : 'built-in template (AI not connected)'}. All numbers come from the stability model, not the AI.</p>
-    <h3>Options</h3>
-    <div class="options" id="opts">${rec.options.map(o => `
-      <button class="opt" data-o="${o.id}" aria-pressed="${o.id === S.chosen}">
-        <b>${o.id}: ${esc(o.label)}${o.id === rec.recommended ? ' (recommended)' : ''}</b>
-        <small>${esc(n.rationale[o.id] || o.detail)}</small>
-      </button>`).join('')}</div>
-    <h3>SOP clauses that apply (SOP agent)</h3>
-    ${b.sop.map(s => `<details><summary>${esc(s.id)}: ${esc(s.title)}</summary><p>${esc(s.text)}</p></details>`).join('')}`;
-  document.querySelectorAll('#opts .opt').forEach(btn => btn.addEventListener('click', () => {
-    S.chosen = btn.dataset.o;
-    document.querySelectorAll('#opts .opt').forEach(x => x.setAttribute('aria-pressed', String(x === btn)));
-    updateApproveLabel();
-  }));
-  updateApproveLabel();
+  const pct = st.usedPct;
+  const fillCls = pct > 100 ? 'high' : pct >= 50 ? 'mid' : 'low';
+  const pctColor = pct > 100 ? 'var(--red)' : pct >= 50 ? 'var(--amber)' : 'var(--emerald)';
+
+  $('briefContent').innerHTML = `
+    <div class="brief-content">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${esc(b.product)} · ${esc(b.route)} · detected ${hhmm(b.detectedAt)} UTC</div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Peak Temp</div><div class="kpi-value alarm">${st.peakTemp} °C</div></div>
+        <div class="kpi"><div class="kpi-label">Minutes Above</div><div class="kpi-value warn">${st.minutesAbove} min</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Stability Budget Used</div>
+      <div class="budget-track"><div class="budget-fill ${fillCls}" style="width:${Math.min(pct,100)}%"></div></div>
+      <div style="font-size:24px;font-weight:800;color:${pctColor};margin-bottom:2px">${pct}%</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">MKT ${st.mktC} °C · ${st.exposureMin} of ${st.budgetMin} min budget</div>
+      <div class="rec-pill">Option ${rec.recommended}: ${esc(rec.options.find(o => o.id === rec.recommended).label)}</div>
+      <div style="font-size:13px;color:var(--ink);margin:8px 0 10px;line-height:1.6">${esc(n.summary)}</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Decision Options</div>
+      <div class="option-list" id="optionList">
+        ${rec.options.map(o => `
+          <button class="option-item ${o.id === S.chosen ? 'selected' : ''}" onclick="chooseOption('${o.id}')">
+            <div class="option-id">Option ${o.id}${o.id === rec.recommended ? ' · Recommended' : ''}</div>
+            <div class="option-label">${esc(o.label)}</div>
+            <div class="option-detail">${esc(n.rationale?.[o.id] || o.detail)}</div>
+          </button>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">SOP Clauses</div>
+      ${b.sop.map(s => `<details><summary>${esc(s.id)}: ${esc(s.title)}</summary><p>${esc(s.text)}</p></details>`).join('')}
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">Analysis by ${n.source === 'llm' ? 'SAP GenAI Hub' : 'built-in template'}. Numbers from stability model.</div>
+    </div>`;
+
+  $('whatifSection').classList.remove('hidden');
+  $('approveSection').classList.remove('hidden');
+  $('wTemp').value = S.wd?.current?.tempC || 10;
+  updateApproveBtn();
 }
-function updateApproveLabel() {
+
+function chooseOption(id) {
+  S.chosen = id;
+  document.querySelectorAll('.option-item').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('.option-id').textContent.startsWith('Option ' + id));
+  });
+  updateApproveBtn();
+}
+function updateApproveBtn() {
   if (!S.brief) return;
   const o = S.brief.recommendation.options.find(x => x.id === S.chosen);
-  $('#approveBtn').textContent = `Approve option ${o.id}: ${o.label}`;
+  if (o) $('approveBtn').textContent = `Approve Option ${o.id}: ${o.label}`;
 }
 
-// ---------- Challenger ----------
-$('#extra').addEventListener('input', e => { $('#extraVal').textContent = e.target.value; });
-$('#askBtn').addEventListener('click', async () => {
+// ── What-If ────────────────────────────────────────────────────────────────
+async function runWhatIf() {
   if (!S.incidentID) return;
-  const btn = $('#askBtn'); btn.disabled = true; btn.textContent = 'Recalculating...';
+  const btn = $('runWhatif'); btn.disabled = true; btn.textContent = 'Calculating…';
   try {
-    const r = await api('challenge', { incidentID: S.incidentID, question: $('#q').value, extraMinutes: Number($('#extra').value), assumedTempC: Number($('#atemp').value) });
+    const r = await api('challenge', {
+      incidentID: S.incidentID, question: '',
+      extraMinutes: Number($('wExtra').value),
+      assumedTempC: Number($('wTemp').value)
+    });
     const changed = r.baseline.option !== r.scenario.option;
-    $('#challengeOut').innerHTML = `
-      <div class="compare">
-        <div><span class="tag">Now</span><b>${r.baseline.usedPct}%</b>budget used · option ${r.baseline.option}</div>
-        <span aria-hidden="true">then</span>
-        <div class="${changed ? 'changed' : ''}"><span class="tag">After ${r.scenario.extraMinutes} min at ${r.scenario.assumedTempC} C</span><b>${r.scenario.usedPct}%</b>budget used · option ${r.scenario.option}</div>
-      </div>
-      <p>${esc(r.answer.text)}</p>
-      <p class="tag">${changed ? 'The recommendation changes. ' : ''}Recalculated by the stability model. Explanation by ${r.answer.source === 'llm' ? 'SAP Generative AI Hub' : 'built-in template'}.</p>`;
+    $('whatifResult').classList.remove('hidden');
+    $('whatifResult').innerHTML =
+      `<b>${r.baseline.usedPct}% → ${r.scenario.usedPct}% budget</b>` +
+      (changed ? ` <span style="color:var(--red)">· Option changes ${r.baseline.option} → ${r.scenario.option}</span>` : ' · Option unchanged') +
+      `<br><span style="color:var(--muted)">${esc(r.answer.text)}</span>`;
     refreshAudit();
-  } catch (e) { toast(e.message); } finally { btn.disabled = false; btn.textContent = 'Run what-if'; }
-});
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Run What-If'; }
+}
 
-// ---------- approval + outcome ----------
-$('#approveBtn').addEventListener('click', async () => {
+// ── Approval ───────────────────────────────────────────────────────────────
+async function approveDecision() {
   if (!S.incidentID || !S.chosen) return;
-  const btn = $('#approveBtn'); btn.disabled = true;
+  const btn = $('approveBtn'); btn.disabled = true;
   try {
-    const r = await api('approve', { incidentID: S.incidentID, option: S.chosen, approver: $('#who').value, note: $('#note').value });
+    const r = await api('approve', {
+      incidentID: S.incidentID, option: S.chosen,
+      approver: $('approverName').value, note: $('approveNote').value
+    });
     const n = r.notice;
-    $('#outcome').classList.remove('hidden');
-    $('#outcomeBody').innerHTML = `
-      <h3>Deviation notice sent to EQMS (mock)</h3>
-      <dl>
-        <dt>Notice</dt><dd>${esc(n.noticeNo)}</dd>
-        <dt>Shipment</dt><dd>${esc(n.shipmentID)} · ${esc(n.product)}</dd>
-        <dt>Excursion</dt><dd>Peak ${n.peakTemp} C, ${n.minutesAbove} min above range, ${n.stabilityBudgetUsedPct}% of budget used</dd>
-        <dt>Decision</dt><dd>${esc(n.decision)} (AI recommended ${esc(n.recommendedByAI)}${n.overrodeRecommendation ? ', QA Manager overrode it' : ''})</dd>
-        <dt>Approved by</dt><dd>${esc(n.approvedBy)}${n.note ? ' · ' + esc(n.note) : ''}</dd>
-      </dl>
-      <div class="alertbox"><b>Alert to ${esc(r.alert.to)}</b><br>${esc(r.alert.message)}</div>`;
-    $('#outcome').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('approveSection').innerHTML = `
+      <div class="outcome-panel">
+        <div class="outcome-title">✅ Decision Approved &amp; Filed</div>
+        <dl class="dl">
+          <dt>Notice</dt><dd>${esc(n.noticeNo)}</dd>
+          <dt>Decision</dt><dd>${esc(n.decision)}</dd>
+          <dt>Approved by</dt><dd>${esc(n.approvedBy)}</dd>
+          <dt>Peak / Duration</dt><dd>${n.peakTemp} °C, ${n.minutesAbove} min above range</dd>
+          <dt>Budget used</dt><dd>${n.stabilityBudgetUsedPct}%</dd>
+        </dl>
+        <div class="alert-box">📣 <b>${esc(r.alert.to)}</b><br>${esc(r.alert.message)}</div>
+      </div>`;
     refreshAudit();
-  } catch (e) { btn.disabled = false; toast(e.message); }
-});
+    toast('Decision approved and filed.', 'success');
+  } catch (e) { btn.disabled = false; toast(e.message, 'error'); }
+}
 
-// ---------- audit trail ----------
+// ── AI Chat ────────────────────────────────────────────────────────────────
+function addChatBubble(role, text) {
+  const wrap = $('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble ' + (role === 'system' ? 'system' : role === 'user' ? 'user' : 'ai');
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = $('chatInput');
+  const msg = input.value.trim(); if (!msg) return;
+  input.value = ''; $('sendBtn').disabled = true;
+  addChatBubble('user', msg);
+  S.chatHistory.push({ role: 'user', content: msg });
+  const typingDiv = addChatBubble('ai', '…');
+  typingDiv.classList.add('typing');
+
+  const context = S.brief ? {
+    product: S.brief.product, route: S.brief.route,
+    stability: S.brief.stability, recommendation: S.brief.recommendation,
+    incidentID: S.brief.incidentID
+  } : { shipment: S.data?.shipmentID };
+
+  try {
+    const r = await geminiChat(S.chatHistory, context);
+    typingDiv.classList.remove('typing'); typingDiv.textContent = r.text;
+    S.chatHistory.push({ role: 'assistant', content: r.text });
+    $('chatSuggestions').style.display = 'none';
+  } catch (e) { typingDiv.textContent = 'Error: ' + e.message; }
+  $('sendBtn').disabled = false;
+  $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+}
+
+function sendSuggestion(btn) {
+  $('chatInput').value = btn.textContent;
+  sendChat();
+}
+
+// ── Simulate page ──────────────────────────────────────────────────────────
+function selectTriggerScenario(btn) {
+  document.querySelectorAll('.sc-select-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  S.triggerScenario = btn.dataset.sc;
+}
+
+async function triggerExcursion() {
+  const btn = $('triggerBtn');
+  btn.disabled = true; btn.textContent = '⏳ Loading scenario…';
+  const aiResult = $('triggerAIResult');
+  aiResult.className = ''; aiResult.textContent = 'Loading scenario and running watchdog…';
+
+  try {
+    const d = await api('loadScenario', { scenario: S.triggerScenario });
+    Object.assign(S, {
+      data: d, idx: 0, wd: null, incidentID: null, brief: null,
+      chosen: null, status: null, seen: new Set(), tsIndex: {}
+    });
+    d.readings.forEach((r, i) => { S.tsIndex[r.ts] = i; });
+
+    btn.textContent = '⏳ Running watchdog…';
+    const wd = await api('runWatchdog', { shipmentID: d.shipmentID, upTo: d.readings[d.readings.length - 1].ts });
+    S.wd = wd;
+
+    const ind = $('excursionIndicator');
+    if (wd.status === 'EXCURSION' && wd.excursion) {
+      ind.classList.add('active-exc');
+      $('excValue').textContent = `${wd.excursion.peak} °C`;
+      $('excSub').textContent = `${wd.excursion.minutes} min out of range`;
+      S.incidentID = wd.incidentID;
+    } else {
+      ind.classList.remove('active-exc');
+      $('excValue').textContent = wd.status;
+      $('excSub').textContent = `Current: ${wd.current.tempC} °C`;
+    }
+
+    btn.textContent = '⏳ Analysing…';
+    if (S.incidentID) {
+      const brief = await api('analyze', { incidentID: S.incidentID });
+      S.triggerContext = { product: brief.product, route: brief.route, stability: brief.stability, recommendation: brief.recommendation };
+      S.triggerChatHistory = [];
+
+      const initMsg = `A temperature excursion has been detected in shipment ${brief.shipmentID} carrying ${brief.product} (${brief.route}). Stability budget used: ${brief.stability.usedPct}%. Peak temperature: ${brief.stability.peakTemp} °C for ${brief.stability.minutesAbove} minutes. The system recommends Option ${brief.recommendation.recommended}. Please give a concise professional risk summary and recommendation for the QA Manager.`;
+      S.triggerChatHistory.push({ role: 'user', content: initMsg });
+
+      let aiText = '';
+      try {
+        const r = await geminiChat(S.triggerChatHistory, S.triggerContext);
+        aiText = r.text;
+        S.triggerChatHistory.push({ role: 'assistant', content: aiText });
+      } catch (e) { aiText = 'AI currently unavailable: ' + e.message; }
+
+      const pct = brief.stability.usedPct;
+      const fillCls = pct > 100 ? 'high' : pct >= 50 ? 'mid' : 'low';
+      const pctColor = pct > 100 ? 'var(--red)' : pct >= 50 ? 'var(--amber)' : 'var(--emerald)';
+      aiResult.className = 'loaded';
+      aiResult.innerHTML = `
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Excursion Summary</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="kpi"><div class="kpi-label">Peak Temp</div><div class="kpi-value alarm">${brief.stability.peakTemp} °C</div></div>
+          <div class="kpi"><div class="kpi-label">Budget Used</div><div class="kpi-value" style="color:${pctColor}">${pct}%</div></div>
+        </div>
+        <div class="budget-track"><div class="budget-fill ${fillCls}" style="width:${Math.min(pct,100)}%"></div></div>
+        <div class="rec-pill" style="margin:10px 0 10px">Option ${brief.recommendation.recommended}: ${esc(brief.recommendation.options.find(o => o.id === brief.recommendation.recommended).label)}</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">AI Recommendation</div>
+        <div style="background:var(--mint);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;font-size:13px;line-height:1.65;color:var(--ink)">${esc(aiText)}</div>`;
+      $('triggerChatArea').classList.remove('hidden');
+      toast('Excursion triggered and analysed.', 'success');
+    } else {
+      aiResult.textContent = 'No excursion detected for this scenario. Try "Cargo Failure" for a guaranteed excursion.';
+    }
+  } catch (e) {
+    toast(e.message, 'error');
+    aiResult.className = '';
+    aiResult.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '🚨 Trigger Excursion';
+}
+
+async function sendTriggerChat() {
+  const input = $('triggerChatInput');
+  const msg = input.value.trim(); if (!msg) return;
+  input.value = '';
+  const history = $('triggerChatHistory');
+  const uDiv = document.createElement('div');
+  uDiv.className = 'chat-bubble user'; uDiv.textContent = msg; history.appendChild(uDiv);
+  S.triggerChatHistory.push({ role: 'user', content: msg });
+  const aDiv = document.createElement('div');
+  aDiv.className = 'chat-bubble ai typing'; aDiv.textContent = '…'; history.appendChild(aDiv);
+  history.scrollTop = history.scrollHeight;
+  try {
+    const r = await geminiChat(S.triggerChatHistory, S.triggerContext || {});
+    aDiv.textContent = r.text; aDiv.classList.remove('typing');
+    S.triggerChatHistory.push({ role: 'assistant', content: r.text });
+  } catch (e) { aDiv.textContent = 'Error: ' + e.message; }
+  history.scrollTop = history.scrollHeight;
+}
+
+// ── Audit Trail ────────────────────────────────────────────────────────────
 async function refreshAudit() {
   try {
-    const r = await fetch('/api/AuditLog?$orderby=seq desc&$top=12');
+    const r = await fetch('/api/AuditLog?$orderby=seq desc&$top=20');
     const j = await r.json();
-    $('#auditRows').innerHTML = (j.value || []).map(a => `<tr><td>${a.seq}</td><td>${esc(String(a.ts).substr(11, 8))}</td><td>${esc(a.eventType)}</td><td>${esc(a.incidentID)}</td><td class="hash">${esc(String(a.hash).slice(0, 12))}...</td></tr>`).join('')
-      || '<tr><td colspan="5" class="muted">No entries yet. Play a scenario to create some.</td></tr>';
-  } catch (e) { /* table stays as is */ }
+    const rows = j.value || [];
+    if (!rows.length) return;
+    $('auditBody').innerHTML = rows.map(a => `
+      <tr>
+        <td>${a.seq}</td>
+        <td>${esc(String(a.ts).substr(11, 8))}</td>
+        <td style="font-weight:600">${esc(a.eventType)}</td>
+        <td style="color:var(--muted)">${esc(a.incidentID)}</td>
+        <td class="mono">${esc(String(a.hash).slice(0, 14))}…</td>
+      </tr>`).join('');
+  } catch (_) {}
 }
-$('#verifyBtn').addEventListener('click', async () => {
+
+async function verifyAudit() {
   try {
     const v = await api('verifyAudit');
-    $('#verifyOut').textContent = v.valid ? `Chain intact: ${v.entries} entries, no tampering detected.` : `Chain broken at entry ${v.brokenAtSeq}.`;
-    $('#verifyOut').style.color = v.valid ? '#0f3d2e' : '#b42318';
-  } catch (e) { toast(e.message); }
-});
+    const el = $('verifyResult');
+    el.textContent = v.valid
+      ? `✅ Chain intact — ${v.entries} entries verified, no tampering detected.`
+      : `❌ Chain broken at entry #${v.brokenAtSeq}.`;
+    el.style.color = v.valid ? 'var(--emerald)' : 'var(--red)';
+  } catch (e) { toast(e.message, 'error'); }
+}
+
 refreshAudit();
 </script>
 </body>

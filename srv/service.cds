@@ -17,4 +17,5 @@ service PharmaGuardService {
   action approve(incidentID : String, option : String,
                  approver : String, note : String)                         returns String;
   action verifyAudit()                                                     returns String;
+  action geminiChat(messages : LargeString, context : LargeString)        returns String;
 }
