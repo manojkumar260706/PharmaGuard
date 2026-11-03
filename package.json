@@ -1,0 +1,24 @@
+{
+  "name": "pharmaguard",
+  "version": "1.0.0",
+  "dependencies": {
+    "@cap-js/hana": "^3",
+    "@sap-ai-sdk/orchestration": "^2.17.0",
+    "@sap/cds": "^10"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3",
+    "@sap/cds-dk": "^10"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "dummy"
+      }
+    }
+  }
+}

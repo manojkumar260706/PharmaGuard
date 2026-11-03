@@ -1,0 +1,6 @@
+ID,title,text,tags
+SOP-TE-01,Excursion definition,"A temperature excursion is any validated reading outside the labelled storage range for 30 minutes or longer. Shorter events and single-sensor anomalies are logged and reviewed but not escalated. (Sample SOP for demo purposes.)","always"
+SOP-TE-02,Quarantine pending assessment,"Product affected by an excursion that consumes 50% or more of its stability budget must be quarantined and must not be released until QA has reviewed stability data and completed required testing. (Sample SOP for demo purposes.)","test"
+SOP-TE-03,Release under deviation,"Product may be released under a documented deviation only when the cumulative exposure is below 50% of the stability budget and the QA Manager approves in writing. (Sample SOP for demo purposes.)","accept"
+SOP-TE-04,Mandatory rejection,"Product must be rejected when the hard temperature limit is reached, when freeze-sensitive product has been frozen, or when exposure exceeds 100% of the stability budget. (Sample SOP for demo purposes.)","reject"
+SOP-TE-05,Deviation documentation,"A deviation notice including the full temperature record, the stability assessment and the QA decision must be raised in the quality system within 24 hours of detection. (Sample SOP for demo purposes.)","always"
