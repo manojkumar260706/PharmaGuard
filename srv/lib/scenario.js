@@ -37,6 +37,46 @@ const SCENARIOS = {
     waypoints: [[0, 4.5], [120, 5.0], [140, 12.0], [160, 18.0], [300, 18.5], [320, 18.5]],
     anomalies: [],
     locations: [[0, 'In transit (truck)'], [120, 'Aircraft hold']]
+  },
+
+  // Refrigerator unit failure mid-flight: slow creep, recovers partially.
+  refrigfail: {
+    label: 'Reefer unit failure — Chennai to Singapore',
+    drug: 'BIO-001',
+    origin: 'Chennai airport',
+    destination: 'Singapore distributor',
+    endMin: 300,
+    waypoints: [[0, 4.8], [60, 5.0], [90, 6.2], [130, 9.8], [170, 11.4], [200, 10.0], [240, 7.5], [300, 5.2]],
+    anomalies: [
+      { at: 55, len: 2, temp: 10.2 }  // brief spike when reefer alarm triggered
+    ],
+    locations: [[0, 'Chennai airport (cold store)'], [60, 'In-flight (aircraft hold)'], [200, 'Singapore Changi transit']]
+  },
+
+  // Overnight road delay: temperature slowly drifts, just crosses threshold.
+  overnight: {
+    label: 'Overnight road delay — Mumbai to Ahmedabad',
+    drug: 'INS-001',
+    origin: 'Mumbai warehouse',
+    destination: 'Ahmedabad hospital',
+    endMin: 480,
+    waypoints: [[0, 5.0], [120, 5.2], [200, 6.8], [240, 8.2], [280, 9.1], [320, 8.6], [380, 7.2], [440, 5.8], [480, 5.1]],
+    anomalies: [],
+    locations: [[0, 'Mumbai cold storage'], [120, 'In transit (highway)'], [240, 'Roadside breakdown'], [380, 'Back in transit']]
+  },
+
+  // Port congestion: multi-hour hold at ambient temp, insulin batch at risk.
+  porthold: {
+    label: 'Port congestion hold — Kolkata to Dhaka',
+    drug: 'INS-001',
+    origin: 'Kolkata port',
+    destination: 'Dhaka hospital',
+    endMin: 360,
+    waypoints: [[0, 5.0], [80, 5.3], [100, 7.0], [140, 9.4], [180, 10.2], [220, 9.8], [260, 8.1], [310, 6.2], [360, 5.0]],
+    anomalies: [
+      { at: 78, len: 3, temp: 12.5 }  // customs scanner room exposure
+    ],
+    locations: [[0, 'Kolkata cold storage'], [80, 'Port customs hold'], [260, 'Vessel cold room']]
   }
 };
 

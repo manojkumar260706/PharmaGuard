@@ -121,6 +121,9 @@ body {
     </div>
     <button class="login-btn" type="submit">Sign In</button>
   </form>
+  <div style="text-align:center;margin-top:16px">
+    <button onclick="forgotPassword()" style="background:none;border:none;color:var(--emerald);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Forgot password?</button>
+  </div>
 </div>
 
 <div class="footer">PharmaGuard · Pharmaceutical Cold Chain Management</div>
@@ -128,6 +131,10 @@ body {
 <script>
   if (sessionStorage.getItem('pg_auth') === 'ok') {
     window.location.replace('/dashboard');
+  }
+
+  function forgotPassword() {
+    alert('Please contact your system administrator to reset your password.\n\nAdmin: admin@pharmaguard.internal');
   }
 
   function doLogin(e) {

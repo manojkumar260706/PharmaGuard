@@ -114,7 +114,7 @@ a:hover { text-decoration: underline; }
 #page-monitor { display: none; }
 #page-monitor.active {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr 5px 400px;
   min-height: calc(100vh - 56px);
 }
 .monitor-main { padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 14px; }
@@ -125,6 +125,7 @@ a:hover { text-decoration: underline; }
 }
 @media (max-width: 1060px) {
   #page-monitor.active { grid-template-columns: 1fr; }
+  .resize-handle { display: none; }
   .monitor-side { position: static; height: auto; max-height: 600px; border-left: none; border-top: 1px solid var(--line); }
 }
 
@@ -406,6 +407,44 @@ textarea.text-input { resize: vertical; min-height: 46px; }
 
 /* ── Page: Audit ─────────────────────────────────────────────────────── */
 #page-audit { padding: 32px 28px 48px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+/* ── Resize handle ───────────────────────────────────────────────────── */
+.resize-handle {
+  width: 5px; cursor: col-resize; background: transparent; flex-shrink: 0;
+  transition: background .15s; position: relative; z-index: 10;
+}
+.resize-handle:hover, .resize-handle.dragging { background: var(--emerald); }
+.resize-handle::after {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px; height: 40px; background: var(--line2); border-radius: 1px;
+}
+
+/* ── My Decisions page ───────────────────────────────────────────────── */
+#page-decisions { padding: 32px 28px 48px; max-width: 1100px; margin: 0 auto; width: 100%; }
+.decisions-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.decisions-empty .icon { font-size: 48px; opacity: .4; margin-bottom: 12px; }
+.decision-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px; margin-bottom: 12px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;
+}
+.decision-card:hover { border-color: var(--line2); }
+.dc-id { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+.dc-product { font-size: 15px; font-weight: 700; color: var(--pine); margin-bottom: 2px; }
+.dc-route { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.dc-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.dc-pill { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid; }
+.dc-pill.opted-A { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-bd); }
+.dc-pill.opted-B { background: var(--red-bg);   color: var(--red);   border-color: var(--red-bd); }
+.dc-pill.opted-C { background: var(--mint);     color: var(--emerald); border-color: var(--mint2); }
+.dc-pill.info    { background: var(--mint); color: var(--pine); border-color: var(--line); }
+.dc-meta { font-size: 12px; color: var(--muted); text-align: right; }
+.dc-meta b { display: block; font-size: 13px; color: var(--ink); margin-bottom: 2px; }
+.dc-detail { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mint); font-size: 13px; color: var(--muted); display: none; }
+.dc-detail.open { display: block; }
+.dc-toggle { background: none; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 5px 12px; font-size: 12px; color: var(--emerald); font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.dc-toggle:hover { background: var(--mint); border-color: var(--emerald); }
 .table-card {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   overflow: hidden; box-shadow: var(--shadow);
@@ -458,6 +497,7 @@ tr:hover td { background: var(--mint); }
     <div class="nav-pills">
       <button class="nav-pill active" data-page="list">Shipments</button>
       <button class="nav-pill" data-page="trigger">Simulate</button>
+      <button class="nav-pill" data-page="decisions">My Decisions</button>
       <button class="nav-pill" data-page="audit">Audit Trail</button>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-left:12px">
@@ -506,6 +546,39 @@ tr:hover td { background: var(--mint); }
           <span class="sc-tag">BIO-001</span>
           <span class="sc-tag risk-high">High Risk</span>
           <span class="sc-tag">4–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
+      <div class="shipment-card" id="card-refrigfail" onclick="selectShipment('refrigfail')">
+        <div class="sc-id">SHP-REFRIGFAIL</div>
+        <div class="sc-name">Reefer Unit Failure — Biologics</div>
+        <div class="sc-route">Chennai Airport <span class="arr">→</span> Singapore Distributor</div>
+        <div class="sc-meta">
+          <span class="sc-tag">BIO-001</span>
+          <span class="sc-tag risk-mid">Moderate Risk</span>
+          <span class="sc-tag">4–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
+      <div class="shipment-card" id="card-overnight" onclick="selectShipment('overnight')">
+        <div class="sc-id">SHP-OVERNIGHT</div>
+        <div class="sc-name">Overnight Road Delay — Insulin</div>
+        <div class="sc-route">Mumbai Warehouse <span class="arr">→</span> Ahmedabad Hospital</div>
+        <div class="sc-meta">
+          <span class="sc-tag">INS-001</span>
+          <span class="sc-tag risk-mid">Moderate Risk</span>
+          <span class="sc-tag">2–8 °C</span>
+        </div>
+        <div class="sc-arrow">›</div>
+      </div>
+      <div class="shipment-card" id="card-porthold" onclick="selectShipment('porthold')">
+        <div class="sc-id">SHP-PORTHOLD</div>
+        <div class="sc-name">Port Congestion Hold — Insulin</div>
+        <div class="sc-route">Kolkata Port <span class="arr">→</span> Dhaka Hospital</div>
+        <div class="sc-meta">
+          <span class="sc-tag">INS-001</span>
+          <span class="sc-tag risk-high">High Risk</span>
+          <span class="sc-tag">2–8 °C</span>
         </div>
         <div class="sc-arrow">›</div>
       </div>
@@ -563,6 +636,9 @@ tr:hover td { background: var(--mint); }
         </div>
       </div>
     </div>
+
+    <!-- Resize handle -->
+    <div class="resize-handle" id="resizeHandle" title="Drag to resize"></div>
 
     <!-- Side panel -->
     <div class="monitor-side">
@@ -638,10 +714,13 @@ tr:hover td { background: var(--mint); }
         <h2>1 — Select Scenario &amp; Trigger</h2>
         <p>Choose a shipment scenario then fire the excursion trigger.</p>
 
-        <div class="scenario-selector">
+        <div class="scenario-selector" style="grid-template-columns:repeat(3,1fr)">
           <button class="sc-select-btn active" data-sc="borderline" onclick="selectTriggerScenario(this)">Tarmac Delay<small>BIO-001</small></button>
           <button class="sc-select-btn" data-sc="minor" onclick="selectTriggerScenario(this)">Customs Hold<small>INS-001</small></button>
           <button class="sc-select-btn" data-sc="severe" onclick="selectTriggerScenario(this)">Cargo Failure<small>BIO-001</small></button>
+          <button class="sc-select-btn" data-sc="refrigfail" onclick="selectTriggerScenario(this)">Reefer Failure<small>BIO-001</small></button>
+          <button class="sc-select-btn" data-sc="overnight" onclick="selectTriggerScenario(this)">Road Delay<small>INS-001</small></button>
+          <button class="sc-select-btn" data-sc="porthold" onclick="selectTriggerScenario(this)">Port Hold<small>INS-001</small></button>
         </div>
 
         <div class="trigger-field">
@@ -679,6 +758,21 @@ tr:hover td { background: var(--mint); }
             <div class="trigger-chat-history" id="triggerChatHistory"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── My Decisions ──────────────────────────────────────────────────────── -->
+  <div id="page-decisions" class="page">
+    <div class="page-header">
+      <h1>My Decisions</h1>
+      <p>All excursion decisions approved by <span id="decisionsUser">admin</span></p>
+    </div>
+    <div id="decisionsBody">
+      <div class="decisions-empty">
+        <div class="icon">📂</div>
+        <div style="font-weight:600;color:var(--pine);margin-bottom:6px">No decisions yet</div>
+        <div style="font-size:13px">Approved decisions will appear here after you resolve an excursion incident.</div>
       </div>
     </div>
   </div>
@@ -746,6 +840,7 @@ function navigate(page) {
   const el = document.getElementById('page-' + page);
   if (el) el.classList.add('active');
   if (page === 'audit') refreshAudit();
+  if (page === 'decisions') refreshDecisions();
 }
 document.querySelectorAll('.nav-pill').forEach(b => b.addEventListener('click', () => navigate(b.dataset.page)));
 
@@ -1120,6 +1215,8 @@ async function approveDecision() {
       </div>`;
     refreshAudit();
     toast('Decision approved and filed.', 'success');
+    // Refresh decisions list in background so it's ready when user navigates there
+    refreshDecisions();
   } catch (e) { btn.disabled = false; toast(e.message, 'error'); }
 }
 
@@ -1295,6 +1392,103 @@ async function verifyAudit() {
     el.style.color = v.valid ? 'var(--emerald)' : 'var(--red)';
   } catch (e) { toast(e.message, 'error'); }
 }
+
+// ── My Decisions ───────────────────────────────────────────────────────────
+async function refreshDecisions() {
+  $('decisionsUser').textContent = pgUser;
+  const body = $('decisionsBody');
+  body.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center;font-size:13px">Loading decisions…</div>`;
+  try {
+    const r = await fetch('/api/Incidents?$filter=status eq \'DECIDED\'&$orderby=decidedAt desc');
+    const j = await r.json();
+    const rows = (j.value || []);
+    if (!rows.length) {
+      body.innerHTML = `
+        <div class="decisions-empty">
+          <div class="icon">📂</div>
+          <div style="font-weight:600;color:var(--pine);margin-bottom:6px">No decisions yet</div>
+          <div style="font-size:13px">Approved decisions will appear here after you resolve an excursion incident.</div>
+        </div>`;
+      return;
+    }
+    const optionLabels = { A: 'Hold & Test', B: 'Reject Batch', C: 'Release Under Deviation' };
+    body.innerHTML = rows.map(inc => {
+      const notice = (() => { try { return JSON.parse(inc.deviationNotice || '{}'); } catch { return {}; } })();
+      const decidedAt = inc.decidedAt ? new Date(inc.decidedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+      const opt = inc.decisionOption || '?';
+      return `
+        <div class="decision-card">
+          <div>
+            <div class="dc-id">${esc(inc.ID)}</div>
+            <div class="dc-product">${esc(notice.product || inc.shipment_ID || '—')}</div>
+            <div class="dc-route">${esc(notice.shipmentID || '—')}</div>
+            <div class="dc-pills">
+              <span class="dc-pill opted-${opt}">Option ${esc(opt)}: ${esc(optionLabels[opt] || opt)}</span>
+              <span class="dc-pill info">Peak ${esc(String(inc.peakTemp))} °C</span>
+              <span class="dc-pill info">${esc(String(inc.minutesOut))} min out of range</span>
+              ${notice.stabilityBudgetUsedPct ? `<span class="dc-pill info">${esc(String(notice.stabilityBudgetUsedPct))}% budget used</span>` : ''}
+            </div>
+            <div class="dc-detail" id="detail-${esc(inc.ID)}">
+              <div style="display:grid;grid-template-columns:max-content 1fr;gap:3px 12px">
+                <span style="color:var(--muted)">Approved by</span><span>${esc(inc.approvedBy || '—')}</span>
+                <span style="color:var(--muted)">Deviation notice</span><span>${esc(notice.noticeNo || '—')}</span>
+                <span style="color:var(--muted)">AI recommended</span><span>Option ${esc(notice.recommendedByAI || '?')}</span>
+                ${notice.overrodeRecommendation ? `<span style="color:var(--muted)">Override note</span><span style="color:var(--amber)">${esc(inc.decisionNote || '—')}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="dc-meta">
+            <b>${esc(decidedAt)}</b>
+            <div style="margin-bottom:8px">Decided</div>
+            <button class="dc-toggle" onclick="toggleDetail('${esc(inc.ID)}', this)">View Details</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    body.innerHTML = `<div style="color:var(--red);padding:20px;font-size:13px">Failed to load decisions: ${esc(e.message)}</div>`;
+  }
+}
+
+function toggleDetail(id, btn) {
+  const el = document.getElementById('detail-' + id);
+  if (!el) return;
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? 'Hide Details' : 'View Details';
+}
+
+// ── Sidebar resize ─────────────────────────────────────────────────────────
+(function () {
+  const handle = $('resizeHandle');
+  if (!handle) return;
+  let dragging = false, startX = 0, startW = 0;
+  const getSide = () => document.querySelector('.monitor-side');
+
+  handle.addEventListener('mousedown', e => {
+    const side = getSide(); if (!side) return;
+    dragging = true; startX = e.clientX; startW = side.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const side = getSide(); if (!side) return;
+    const delta = startX - e.clientX;
+    const newW = Math.min(600, Math.max(280, startW + delta));
+    side.style.width = newW + 'px';
+    side.style.minWidth = newW + 'px';
+    const monitor = document.getElementById('page-monitor');
+    if (monitor) monitor.style.gridTemplateColumns = `1fr 5px ${newW}px`;
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
 
 refreshAudit();
 </script>
