@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PharmaGuard — Login</title>
+<link rel="icon" type="image/png" href="/pglogo.png">
+<style>
+:root {
+  --pine:    #0f3d2e;
+  --emerald: #1f8a5b;
+  --emerald2:#177a4e;
+  --mint:    #e6f2ea;
+  --paper:   #f6faf7;
+  --card:    #ffffff;
+  --ink:     #17261f;
+  --muted:   #5b7066;
+  --line:    #cfe0d6;
+  --red:     #b42318;
+  --red-bg:  #fde8e6;
+  --font:    "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; font-family: var(--font);
+  background: var(--paper); color: var(--ink);
+}
+body {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(145deg, #e6f2ea 0%, #f6faf7 60%, #d0e8d8 100%);
+}
+
+/* Brand mark above card */
+.brand-mark {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+.brand-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--pine);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: 0 4px 16px rgba(15,61,46,.25);
+}
+.brand-name { font-size: 22px; font-weight: 800; color: var(--pine); letter-spacing: .2px; }
+.brand-sub  { font-size: 13px; color: var(--muted); margin-top: -6px; }
+
+/* Card */
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 36px 40px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 8px 32px rgba(15,61,46,.10);
+}
+.card-title { font-size: 17px; font-weight: 700; color: var(--pine); margin-bottom: 4px; }
+.card-sub   { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-size: 12px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px;
+}
+.field input {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--line); border-radius: 8px;
+  font: inherit; font-size: 14px; color: var(--ink);
+  background: var(--paper); transition: border-color .15s;
+  outline: none;
+}
+.field input:focus { border-color: var(--emerald); background: #fff; }
+
+.error-box {
+  background: var(--red-bg); border: 1px solid #f0a8a0;
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; color: var(--red);
+  margin-bottom: 16px; display: none;
+}
+.error-box.show { display: block; }
+
+.login-btn {
+  width: 100%; padding: 11px;
+  background: var(--pine); color: #fff;
+  border: none; border-radius: 8px;
+  font: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+  margin-top: 4px;
+}
+.login-btn:hover { background: #0a2d22; }
+.login-btn:active { background: var(--emerald2); }
+
+.footer {
+  margin-top: 32px; font-size: 12px; color: var(--muted); text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="brand-mark">
+  <div style="width:140px;height:140px;border-radius:24px;background:#fff;box-shadow:0 4px 16px rgba(15,61,46,.25);overflow:hidden;display:flex;align-items:center;justify-content:center">
+    <img src="/pglogo.png" alt="PharmaGuard Logo" style="width:220px;height:220px;object-fit:contain">
+  </div>
+  <div class="brand-name">PharmaGuard</div>
+  <div class="brand-sub">Cold Chain Excursion Monitor</div>
+</div>
+
+<div class="card">
+  <div class="card-title">Sign in to your account</div>
+  <div class="card-sub">Use your PharmaGuard credentials to continue</div>
+
+  <div class="error-box" id="errorBox">Incorrect username or password. Please try again.</div>
+
+  <form onsubmit="doLogin(event)" autocomplete="off">
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter username" autofocus autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" type="submit">Sign In</button>
+  </form>
+</div>
+
+<div class="footer">PharmaGuard · Pharmaceutical Cold Chain Management</div>
+
+<script>
+  if (sessionStorage.getItem('pg_auth') === 'ok') {
+    window.location.replace('/dashboard');
+  }
+
+  function doLogin(e) {
+    e.preventDefault();
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    const err  = document.getElementById('errorBox');
+
+    if (user === 'admin' && pass === 'admin123') {
+      sessionStorage.setItem('pg_auth', 'ok');
+      sessionStorage.setItem('pg_user', user);
+      window.location.replace('/dashboard');
+    } else {
+      err.classList.add('show');
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  }
+</script>
+</body>
+</html>

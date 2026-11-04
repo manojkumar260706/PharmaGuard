@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PharmaGuard — Cold Chain Monitor</title>
+<link rel="icon" type="image/png" href="/pglogo.png">
 <style>
 /* ── Design Tokens (original light theme) ─────────────────────────── */
 :root {
@@ -51,7 +52,7 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0; position: sticky; top: 0; z-index: 100;
   box-shadow: 0 2px 8px rgba(0,0,0,.18);
 }
-.brand { font-size: 18px; font-weight: 700; letter-spacing: .2px; line-height: 1.2; }
+.brand { font-size: 18px; font-weight: 700; letter-spacing: .2px; line-height: 1.2; display: flex; align-items: center; gap: 10px; }
 .brand small { display: block; font-size: 11px; font-weight: 400; color: #b9d8c8; letter-spacing: .4px; }
 .topbar-spacer { flex: 1; }
 .nav-pills { display: flex; gap: 4px; }
@@ -447,12 +448,24 @@ tr:hover td { background: var(--mint); }
 
   <!-- ── Topbar ────────────────────────────────────────────────────────── -->
   <div id="topbar">
-    <div class="brand">PharmaGuard <small>Cold Chain Excursion Monitor</small></div>
+    <div class="brand">
+      <div style="width:42px;height:42px;border-radius:8px;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <img src="/pglogo.png" alt="PharmaGuard" style="width:64px;height:64px;object-fit:contain">
+      </div>
+      PharmaGuard <small>Cold Chain Excursion Monitor</small>
+    </div>
     <div class="topbar-spacer"></div>
     <div class="nav-pills">
       <button class="nav-pill active" data-page="list">Shipments</button>
       <button class="nav-pill" data-page="trigger">Simulate</button>
       <button class="nav-pill" data-page="audit">Audit Trail</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:12px">
+      <div style="display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:20px;background:rgba(255,255,255,.12);font-size:13px;color:#e6f2ea">
+        <span style="font-size:15px">👤</span>
+        <span id="topbarUser">admin</span>
+      </div>
+      <button onclick="logout()" style="padding:5px 12px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#b9d8c8;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='transparent'">Sign out</button>
     </div>
   </div>
 
@@ -703,6 +716,19 @@ tr:hover td { background: var(--mint); }
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hhmm = iso => new Date(iso).toISOString().substr(11, 5);
+
+// ── Auth guard ─────────────────────────────────────────────────────────────
+if (sessionStorage.getItem('pg_auth') !== 'ok') {
+  window.location.replace('/login');
+}
+const pgUser = sessionStorage.getItem('pg_user') || 'admin';
+document.getElementById('topbarUser').textContent = pgUser;
+
+function logout() {
+  sessionStorage.removeItem('pg_auth');
+  sessionStorage.removeItem('pg_user');
+  window.location.replace('/login');
+}
 
 let toastTimer;
 function toast(msg, type = '') {
